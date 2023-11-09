@@ -42,17 +42,6 @@ func setup(c *caddy.Controller) error {
 		vm.LibVirt = libvirt.NewWithDialer(dialers.NewLocal(dialers.WithLocalTimeout(5 * time.Second)))
 	}
 
-	err := vm.LibVirt.Connect()
-	if err != nil {
-		log.Fatalf("Unable to dial libvirt: %v (%s)", err, socketPath)
-	}
-
-	version, err := vm.LibVirt.ConnectGetLibVersion()
-	if err != nil {
-		log.Fatalf("failed to retrieve libvirt version: %v", err)
-	}
-	log.Infof("LibVirt version: %d", version)
-
 	// Add the Plugin to CoreDNS, so Servers can use it in their plugin chain.
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
 		vm.Next = next

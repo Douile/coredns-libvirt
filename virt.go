@@ -32,6 +32,12 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 
 	domName := strings.TrimSuffix(qname, wrappedTLD)
 
+	err := p.LibVirt.Connect()
+	if err != nil {
+		log.Warningf("Unable to dial libvirt: %v", err)
+		return plugin.NextOrFailure(p.Name(), p.Next, ctx, w, r)
+	}
+
 	domPtr, err := p.LibVirt.DomainLookupByName(domName)
 	if err != nil {
 		log.Infof("Error Domain doesn't exist (%s): %v", domName, err)
@@ -43,6 +49,11 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 	if err != nil {
 		log.Warningf("Error fetching interface addresses: %v", err)
 		return plugin.NextOrFailure(p.Name(), p.Next, ctx, w, r)
+	}
+
+	err = p.LibVirt.ConnectClose()
+	if err != nil {
+		log.Warningf("Unable to close libvirt connection: %v", err)
 	}
 
 	answers := []dns.RR{}
