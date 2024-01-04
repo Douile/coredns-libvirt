@@ -36,7 +36,7 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 		err := p.LibVirt.Connect()
 		if err != nil {
 			log.Warningf("Unable to dial libvirt: %v", err)
-			return plugin.NextOrFailure(p.Name(), p.Next, ctx, w, r)
+			//return plugin.NextOrFailure(p.Name(), p.Next, ctx, w, r)
 		}
 	}
 
