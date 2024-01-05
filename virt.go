@@ -26,7 +26,7 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 
 	wrappedTLD := fmt.Sprintf(".%s.", p.TLD)
 
-	if !strings.HasSuffix(qname, wrappedTLD) || (state.QType() != dns.TypeA && state.QType() != dns.TypeAAAA) {
+	if !strings.HasSuffix(qname, wrappedTLD) || (state.QType() != dns.TypeA && state.QType() != dns.TypeAAAA && state.QType() != dns.TypeTXT) {
 		return plugin.NextOrFailure(p.Name(), p.Next, ctx, w, r)
 	}
 
@@ -63,13 +63,13 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 		for _, addr := range iface.Addrs {
 			log.Infof("Replying with address: %s", addr.Addr)
 			ip := net.ParseIP(addr.Addr)
-			if ip.To4() != nil {
+			if ip.To4() != nil && state.QType() == dns.TypeA {
 				rr := new(dns.A)
 				rr.Hdr = dns.RR_Header{Name: qname, Rrtype: dns.TypeA, Class: dns.ClassINET}
 				rr.A = ip.To4()
 
 				answers = append(answers, rr)
-			} else if ip.To16() != nil {
+			} else if ip.To16() != nil && state.QType() == dns.TypeAAAA {
 				rr := new(dns.AAAA)
 				rr.Hdr = dns.RR_Header{Name: qname, Rrtype: dns.TypeAAAA, Class: dns.ClassINET}
 				rr.AAAA = ip.To16()
@@ -77,17 +77,19 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 				answers = append(answers, rr)
 			}
 
-			{
-				tt := new(dns.TXT)
-				tt.Hdr = dns.RR_Header{Name: fmt.Sprintf("mask.%s", qname), Rrtype: dns.TypeTXT, Class: dns.ClassINET}
-				tt.Txt = append(tt.Txt, fmt.Sprintf("%s/%d", addr.Addr, addr.Prefix))
-				answers = append(answers, tt)
-			}
-			{
-				tt := new(dns.TXT)
-				tt.Hdr = dns.RR_Header{Name: fmt.Sprintf("if.%s", qname), Rrtype: dns.TypeTXT, Class: dns.ClassINET}
-				tt.Txt = append(tt.Txt, iface.Name)
-				answers = append(answers, tt)
+			if state.QType() == dns.TypeTXT {
+				{
+					tt := new(dns.TXT)
+					tt.Hdr = dns.RR_Header{Name: fmt.Sprintf("mask.%s", qname), Rrtype: dns.TypeTXT, Class: dns.ClassINET}
+					tt.Txt = append(tt.Txt, fmt.Sprintf("%s/%d", addr.Addr, addr.Prefix))
+					answers = append(answers, tt)
+				}
+				{
+					tt := new(dns.TXT)
+					tt.Hdr = dns.RR_Header{Name: fmt.Sprintf("if.%s", qname), Rrtype: dns.TypeTXT, Class: dns.ClassINET}
+					tt.Txt = append(tt.Txt, iface.Name)
+					answers = append(answers, tt)
+				}
 			}
 		}
 	}
