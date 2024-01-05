@@ -70,15 +70,13 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 				rr.A = ip.To4()
 
 				answers = append(answers, rr)
-			} else if ip.To16() != nil && state.QType() == dns.TypeAAAA {
+			} else if ip.To4() == nil && ip.To16() != nil && state.QType() == dns.TypeAAAA {
 				rr := new(dns.AAAA)
 				rr.Hdr = dns.RR_Header{Name: qname, Rrtype: dns.TypeAAAA, Class: dns.ClassINET}
 				rr.AAAA = ip.To16()
 
 				answers = append(answers, rr)
-			}
-
-			if state.QType() == dns.TypeTXT {
+			} else if state.QType() == dns.TypeTXT {
 				{
 					tt := new(dns.TXT)
 					tt.Hdr = dns.RR_Header{Name: fmt.Sprintf("mask.%s", qname), Rrtype: dns.TypeTXT, Class: dns.ClassINET}
