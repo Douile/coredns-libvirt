@@ -19,8 +19,13 @@ docker run -it --rm -v $PWD:/v -w /v golang:1.16 sh -c 'make gen && make'
 ## Syntax
 
 ~~~ txt
-virt [tld] [libvirt socket path]
+virt [tld] [libvirt socket path] [libvirt connect URI]
 ~~~
+
+Defaults:
+- tld: `virt`
+- libvirt socket path: `/run/libvirt/libvirt-sock-ro`
+- libvirt connect URI: `qemu:///system`
 
 ## Also See
 

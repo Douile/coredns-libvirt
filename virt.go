@@ -14,9 +14,10 @@ import (
 )
 
 type VirtMachine struct {
-	Next    plugin.Handler
-	TLD     string
-	LibVirt *libvirt.Libvirt
+	Next       plugin.Handler
+	TLD        string
+	ConnectURI libvirt.ConnectURI
+	LibVirt    *libvirt.Libvirt
 }
 
 // ServeDNS implements the plugin.Handler interface.
@@ -33,7 +34,7 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 	domName := strings.TrimSuffix(qname, wrappedTLD)
 
 	if !p.LibVirt.IsConnected() {
-		err := p.LibVirt.Connect()
+		err := p.LibVirt.ConnectToURI(p.ConnectURI)
 		if err != nil {
 			log.Warningf("Unable to dial libvirt: %v", err)
 			//return plugin.NextOrFailure(p.Name(), p.Next, ctx, w, r)

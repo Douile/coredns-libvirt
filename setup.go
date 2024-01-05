@@ -27,10 +27,16 @@ func setup(c *caddy.Controller) error {
 		vm.TLD = "virt"
 	}
 
-	socketPath := ""
+	socketPath := "/run/libvirt/libvirt-sock-ro"
 	if c.NextArg() {
 		socketPath = c.Val()
 	}
+
+	connectUri := libvirt.QEMUSystem
+	if c.NextArg() {
+		connectUri = libvirt.ConnectURI(c.Val())
+	}
+	vm.ConnectURI = connectUri
 
 	if c.NextArg() {
 		return plugin.Error("virt", c.ArgErr())
