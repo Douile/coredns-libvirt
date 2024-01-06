@@ -111,6 +111,7 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 	m := new(dns.Msg)
 	m.SetReply(r)
 	m.Authoritative = true
+	m.RecursionAvailable = true
 	m.Answer = answers
 
 	w.WriteMsg(m)
