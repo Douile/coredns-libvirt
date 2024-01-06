@@ -28,13 +28,11 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 	state := request.Request{W: w, Req: r}
 	qname := state.Name()
 
-	wrappedTLD := fmt.Sprintf(".%s.", p.TLD)
-
-	if !strings.HasSuffix(qname, wrappedTLD) || (state.QType() != dns.TypeA && state.QType() != dns.TypeAAAA && state.QType() != dns.TypeTXT) {
+	if !strings.HasSuffix(qname, p.TLD) || (state.QType() != dns.TypeA && state.QType() != dns.TypeAAAA && state.QType() != dns.TypeTXT) {
 		return plugin.NextOrFailure(p.Name(), p.Next, ctx, w, r)
 	}
 
-	domName := strings.TrimSuffix(qname, wrappedTLD)
+	domName := strings.TrimSuffix(qname, p.TLD)
 
 	if p.ShouldDisconnect {
 		// Locking is only needed if we disconnect after

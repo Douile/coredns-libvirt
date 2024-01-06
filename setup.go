@@ -3,6 +3,8 @@ package virt
 import (
 	"sync"
 	"time"
+	"strings"
+	"fmt"
 
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
@@ -25,8 +27,16 @@ func setup(c *caddy.Controller) error {
 
 	if c.NextArg() {
 		vm.TLD = c.Val()
+
+		if !strings.HasSuffix(vm.TLD, ".") {
+			vm.TLD = fmt.Sprintf("%s.", vm.TLD)
+		}
+
+		if !strings.HasPrefix(vm.TLD, ".") {
+			vm.TLD = fmt.Sprintf(".%s", vm.TLD)
+		}
 	} else {
-		vm.TLD = "virt"
+		vm.TLD = ".virt."
 	}
 
 	socketPath := "/run/libvirt/libvirt-sock-ro"
