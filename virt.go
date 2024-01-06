@@ -43,13 +43,26 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 	}
 
 	if !p.LibVirt.IsConnected() {
+		// If we disconnect after every query then there is a full-query lock
+		if !p.ShouldDisconnect {
+			p.ConnectMutex.Lock()
+
+			if p.LibVirt.IsConnected() {
+				p.ConnectMutex.Unlock()
+				goto skipConnect
+			}
+		}
 		log.Info("Connecting to libvirt...")
 		err := p.LibVirt.ConnectToURI(p.ConnectURI)
 		if err != nil {
 			log.Warningf("Unable to dial libvirt: %v", err)
 			//return plugin.NextOrFailure(p.Name(), p.Next, ctx, w, r)
 		}
+		if !p.ShouldDisconnect {
+			p.ConnectMutex.Unlock()
+		}
 	}
+	skipConnect:
 
 	domPtr, err := p.LibVirt.DomainLookupByName(domName)
 	if err != nil {
