@@ -1,6 +1,7 @@
 package virt
 
 import (
+	"sync"
 	"time"
 
 	"github.com/coredns/caddy"
@@ -20,6 +21,7 @@ func setup(c *caddy.Controller) error {
 	c.Next()
 
 	vm := new(VirtMachine)
+	vm.ConnectMutex = new(sync.Mutex)
 
 	if c.NextArg() {
 		vm.TLD = c.Val()
@@ -37,6 +39,8 @@ func setup(c *caddy.Controller) error {
 		connectUri = libvirt.ConnectURI(c.Val())
 	}
 	vm.ConnectURI = connectUri
+
+	vm.ShouldDisconnect = c.NextArg() && c.Val() == "yes"
 
 	if c.NextArg() {
 		return plugin.Error("virt", c.ArgErr())

@@ -19,13 +19,14 @@ docker run -it --rm -v $PWD:/v -w /v golang:1.16 sh -c 'make gen && make'
 ## Syntax
 
 ~~~ txt
-virt [tld] [libvirt socket path] [libvirt connect URI]
+virt [tld] [libvirt socket path] [libvirt connect URI] [Should disconnect]
 ~~~
 
 Defaults:
-- tld: `virt`
-- libvirt socket path: `/run/libvirt/libvirt-sock-ro`
-- libvirt connect URI: `qemu:///system`
+- tld: `virt` - The domain to return libvirt domains as a subdomain of
+- libvirt socket path: `/run/libvirt/libvirt-sock-ro` - The path to the libvirt unix control socket
+- libvirt connect URI: `qemu:///system` - The URI for libvirts emulation agent
+- Should disconnect: `no` - Whether to disconnect after every query, or leave connection open
 
 ## Also See
 

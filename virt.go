@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/request"
@@ -14,10 +15,12 @@ import (
 )
 
 type VirtMachine struct {
-	Next       plugin.Handler
-	TLD        string
-	ConnectURI libvirt.ConnectURI
-	LibVirt    *libvirt.Libvirt
+	Next             plugin.Handler
+	TLD              string
+	ConnectURI       libvirt.ConnectURI
+	LibVirt          *libvirt.Libvirt
+	ConnectMutex     *sync.Mutex
+	ShouldDisconnect bool
 }
 
 // ServeDNS implements the plugin.Handler interface.
@@ -33,7 +36,16 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 
 	domName := strings.TrimSuffix(qname, wrappedTLD)
 
+	if p.ShouldDisconnect {
+		// Locking is only needed if we disconnect after
+		// every query. Otherwise implicit write locks are
+		// enough.
+		p.ConnectMutex.Lock()
+		defer p.ConnectMutex.Unlock()
+	}
+
 	if !p.LibVirt.IsConnected() {
+		log.Info("Connecting to libvirt...")
 		err := p.LibVirt.ConnectToURI(p.ConnectURI)
 		if err != nil {
 			log.Warningf("Unable to dial libvirt: %v", err)
@@ -54,9 +66,12 @@ func (p VirtMachine) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.
 		return plugin.NextOrFailure(p.Name(), p.Next, ctx, w, r)
 	}
 
-	err = p.LibVirt.ConnectClose()
-	if err != nil {
-		log.Warningf("Unable to close libvirt connection: %v", err)
+	// TODO: Add disconnect after n secs option
+	if p.ShouldDisconnect {
+		err = p.LibVirt.ConnectClose()
+		if err != nil {
+			log.Warningf("Unable to close libvirt connection: %v", err)
+		}
 	}
 
 	answers := []dns.RR{}
